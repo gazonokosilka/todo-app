@@ -9,7 +9,7 @@ import (
 )
 
 type Handler struct {
-	Store *store.MemoryStore
+	Store store.TaskStore
 }
 
 func (h *Handler) CreateTask(c *gin.Context) {
@@ -18,11 +18,21 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
-	created := h.Store.Create(task)
+	created, err := h.Store.Create(task)
+	if err != nil {
+
+	}
 	c.JSON(http.StatusOK, created)
 }
 func (h *Handler) ListTask(c *gin.Context) {
-	c.JSON(http.StatusOK, h.Store.List())
+
+	tasks, err := h.Store.List()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tasks)
 }
 func (h *Handler) DeleteTask(c *gin.Context) {
 	idStr := c.Query("id")
@@ -32,8 +42,8 @@ func (h *Handler) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	ok := h.Store.Delete(id)
-	if !ok {
+	err = h.Store.Delete(id)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
@@ -56,23 +66,3 @@ func (h *Handler) MarkDone(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "done"})
 }
-
-//func (h *Handler) MarkDone(w http.ResponseWriter, r *http.Request) {
-//	if r.Method != http.MethodPut {
-//		http.Error(w, "Only PUT is allowed", http.StatusMethodNotAllowed)
-//		return
-//	}
-//	idStr := r.URL.Query().Get("id")
-//	id, err := strconv.Atoi(idStr)
-//	if err != nil {
-//		http.Error(w, "Tasl not found", http.StatusNotFound)
-//		return
-//	}
-//	ok := h.Store.MarkDone(id)
-//	if ok != nil {
-//		http.Error(w, "Task not found", http.StatusNotFound)
-//		return
-//	}
-//	w.Header().Set("Content-Type", "appliscation/json")
-//	json.NewEncoder(w).Encode(map[string]string{"status": "done"})
-//}
